@@ -3,19 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Galaxia de Amor Infinito</title>
+    <title>Galaxia de Amor - Victoria, Clarissa y Cataleya</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #05000a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        #canvas-container { width: 100vw; height: 100vh; position: relative; }
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: #020008; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        }
+        #canvas-container { 
+            width: 100vw; 
+            height: 100vh; 
+            position: relative; 
+        }
         .text-particle {
             position: absolute;
             white-space: nowrap;
-            font-weight: 600;
+            font-weight: 700;
             pointer-events: none;
-            transition: color 1.5s ease-in-out;
-            text-shadow: 0 0 10px rgba(255, 20, 147, 0.5);
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            transition: color 1.2s ease-in-out;
+            text-shadow: 0 0 8px rgba(255, 20, 147, 0.8), 0 0 15px rgba(255, 255, 255, 0.6);
+            letter-spacing: 0.5px;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -29,43 +37,103 @@
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 20;
+    camera.position.z = 15;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(renderer.domElement);
 
-    // --- ESTRELLAS TITILANTES ---
+    // --- FONDO DE GALAXIA MORADA Y AZUL ---
+    const starCount = 2500;
     const starGeometry = new THREE.BufferGeometry();
-    const starCount = 2000;
     const starPositions = new Float32Array(starCount * 3);
-    const starSizes = new Float32Array(starCount);
+    const starColors = new Float32Array(starCount * 3);
+
+    // Colores de la galaxia: azul, morado, violeta y blanco
+    const galaxyColors = [
+        new THREE.Color(0x4b0082), // Índigo/Morado
+        new THREE.Color(0x8a2be2), // Azul Violeta
+        new THREE.Color(0x00bfff), // Azul Profundo
+        new THREE.Color(0xda70d6), // Orquídea
+        new THREE.Color(0xffffff)  # Blanco estrella
+    ];
 
     for (let i = 0; i < starCount; i++) {
-        starPositions[i * 3] = (Math.random() - 0.5) * 150;
-        starPositions[i * 3 + 1] = (Math.random() - 0.5) * 150;
-        starPositions[i * 3 + 2] = (Math.random() - 0.5) * 150;
-        starSizes[i] = Math.random();
+        starPositions[i * 3] = (Math.random() - 0.5) * 120;
+        starPositions[i * 3 + 1] = (Math.random() - 0.5) * 120;
+        starPositions[i * 3 + 2] = (Math.random() - 0.5) * 120;
+
+        const col = galaxyColors[Math.floor(Math.random() * galaxyColors.length)];
+        starColors[i * 3] = col.r;
+        starColors[i * 3 + 1] = col.g;
+        starColors[i * 3 + 2] = col.b;
     }
+
     starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-    starGeometry.setAttribute('size', new THREE.BufferAttribute(starSizes, 1));
+    starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
 
     const starMaterial = new THREE.PointsMaterial({
-        color: 0xffffff,
-        size: 0.2,
+        size: 0.25,
+        vertexColors: true,
         transparent: true,
-        opacity: 0.8,
+        opacity: 0.85,
         blending: THREE.AdditiveBlending
     });
     const starField = new THREE.Points(starGeometry, starMaterial);
     scene.add(starField);
 
-    // --- ESTRELLA FUGAZ ---
+    // --- CORAZÓN ROJO Y MEJOR HECHO ---
+    const heartShape = new THREE.Shape();
+    const x = 0, y = 0;
+    heartShape.moveTo(x + 0.25, y + 0.25);
+    heartShape.bezierCurveTo(x + 0.25, y + 0.25, x, y, x, y - 0.25);
+    heartShape.bezierCurveTo(x, y - 0.75, x - 0.75, y - 0.75, x - 0.75, y - 0.75);
+    heartShape.bezierCurveTo(x - 1.25, y - 0.75, x - 1.25, y - 0.125, x - 1.25, y - 0.125);
+    heartShape.bezierCurveTo(x - 1.25, y + 0.375, x - 0.5, y + 0.875, x + 0.25, y + 1.25);
+    heartShape.bezierCurveTo(x + 1, y + 0.875, x + 1.75, y + 0.375, x + 1.75, y - 0.125);
+    heartShape.bezierCurveTo(x + 1.75, y - 0.125, x + 1.75, y - 0.75, x + 1.25, y - 0.75);
+    heartShape.bezierCurveTo(x + 0.875, y - 0.75, x + 0.25, y, x + 0.25, y + 0.25);
+
+    const extrudeSettings = { 
+        depth: 0.5, 
+        bevelEnabled: true, 
+        bevelSegments: 5, 
+        steps: 3, 
+        bevelSize: 0.2, 
+        bevelThickness: 0.2 
+    };
+    const heartGeo = new THREE.ExtrudeGeometry(heartShape, extrudeSettings);
+    heartGeo.center();
+
+    // Material rojo brillante radiante
+    const heartMat = new THREE.MeshPhongMaterial({ 
+        color: 0xff0033, 
+        emissive: 0x660011, 
+        shininess: 120, 
+        specular: 0xffaaaa 
+    });
+    const heart = new THREE.Mesh(heartGeo, heartMat);
+    heart.scale.set(2.2, 2.2, 2.2); // Tamaño destacado en el centro
+    heart.rotation.x = Math.PI;
+    scene.add(heart);
+
+    // Luces para resaltar el corazón rojo
+    const redLight = new THREE.PointLight(0xff0044, 3, 40);
+    redLight.position.set(0, 0, 8);
+    scene.add(redLight);
+
+    const blueGlow = new THREE.PointLight(0x8a2be2, 2, 50);
+    blueGlow.position.set(-10, 10, -5);
+    scene.add(blueGlow);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+    // --- ESTRELLA FUGAZ PASANDO CERCA ---
     const shootingStarGeo = new THREE.BufferGeometry();
     const shootingStarPos = new Float32Array(3);
     shootingStarGeo.setAttribute('position', new THREE.BufferAttribute(shootingStarPos, 3));
-    const shootingStarMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.4, transparent: true });
+    const shootingStarMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.6, transparent: true, blending: THREE.AdditiveBlending });
     const shootingStar = new THREE.Points(shootingStarGeo, shootingStarMat);
     scene.add(shootingStar);
 
@@ -74,37 +142,25 @@
 
     function triggerShootingStar() {
         isShooting = true;
-        shootingStar.position.set((Math.random() - 0.5) * 40, 20, (Math.random() - 0.5) * 20);
-        shootVel.set((Math.random() - 0.5) * 0.5, -0.5, (Math.random() - 0.5) * 0.2);
-        setTimeout(() => { isShooting = false; }, 2000);
+        // Pasa cruzando cerca del corazón
+        shootingStar.position.set(-12, 6, 2);
+        shootVel.set(0.6, -0.3, -0.1);
+        setTimeout(() => { isShooting = false; }, 1800);
     }
-    setInterval(() => { if(!isShooting) triggerShootingStar(); }, 4000);
+    setInterval(() => { if(!isShooting) triggerShootingStar(); }, 3500);
 
-    // --- CORAZÓN 3D ---
-    const heartShape = new THREE.Shape();
-    heartShape.moveTo(0, 0);
-    heartShape.bezierCurveTo(0, -0.3, -0.6, -0.3, -0.6, 0);
-    heartShape.bezierCurveTo(-0.6, 0.6, 0, 1, 0, 1.4);
-    heartShape.bezierCurveTo(0, 1, 0.6, 0.6, 0.6, 0);
-    heartShape.bezierCurveTo(0.6, -0.3, 0, -0.3, 0, 0);
+    // --- 100 FRASES GIRANDO ALREDEDOR DEL CORAZÓN ---
+    const basePhrases = [
+        "amor", "mi vida", "te amo", "una vida entera contigo", 
+        "me quedaría contigo mil años", "princesas", "mis amores", 
+        "Clarissa", "Victoria", "preciosas"
+    ];
 
-    const heartGeo = new THREE.ExtrudeGeometry(heartShape, { depth: 0.4, bevelEnabled: true, bevelSize: 0.2, bevelThickness: 0.2 });
-    heartGeo.center();
-    const heartMat = new THREE.MeshPhongMaterial({ color: 0xff1493, shininess: 100 });
-    const heart = new THREE.Mesh(heartGeo, heartMat);
-    heart.rotation.x = Math.PI;
-    scene.add(heart);
-
-    const light = new THREE.PointLight(0xff69b4, 2, 50);
-    light.position.set(5, 5, 5);
-    scene.add(light);
-    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-
-    // --- PALABRAS EN ÓRBITA ---
-    const phrases = ["amor", "mi vida", "te amo", "una vida entera contigo", "me quedaría contigo mil años", "princesas", "mis amores", "Clarissa", "Victoria", "preciosas"];
+    const totalPhrasesCount = 100;
     const textParticles = [];
 
-    phrases.forEach((txt, i) => {
+    for (let i = 0; i < totalPhrasesCount; i++) {
+        const txt = basePhrases[i % basePhrases.length];
         const el = document.createElement('div');
         el.className = 'text-particle';
         el.innerText = txt;
@@ -112,36 +168,38 @@
 
         textParticles.push({
             element: el,
-            angle: (i / phrases.length) * Math.PI * 2,
-            radius: 8 + Math.random() * 5,
-            speed: 0.005 + Math.random() * 0.005,
-            yOff: (Math.random() - 0.5) * 8,
-            phase: Math.random() * Math.PI
+            angle: Math.random() * Math.PI * 2,
+            radius: 4.2 + Math.random() * 4.5, // Órbita cercana al corazón
+            speed: (0.003 + Math.random() * 0.004) * (Math.random() < 0.5 ? 1 : -1),
+            yOff: (Math.random() - 0.5) * 5,
+            phase: Math.random() * Math.PI * 2,
+            baseSize: 11 + Math.floor(Math.random() * 6)
         });
-    });
+    }
 
     // --- ANIMACIÓN ---
     function animate() {
         requestAnimationFrame(animate);
-        const time = Date.now() * 0.001;
+        const time = Date.now() * 0.0012;
 
-        // Movimiento Corazón
-        heart.rotation.y += 0.015;
-        heart.position.y = Math.sin(time) * 0.2;
+        // Rotación y latido suave del corazón
+        heart.rotation.y += 0.012;
+        const pulse = 2.2 + Math.sin(time * 3) * 0.08;
+        heart.scale.set(pulse, pulse, pulse);
 
-        // Estrella Fugaz
-        if(isShooting) {
+        // Movimiento de estrella fugaz
+        if (isShooting) {
             shootingStar.position.add(shootVel);
-            shootingStar.material.opacity = Math.sin(time * 10);
+            shootingStar.material.opacity = Math.sin(time * 12);
         } else {
-            shootingStar.position.y = 100;
+            shootingStar.position.set(100, 100, 100);
         }
 
-        // Estrellas titilantes
-        starField.rotation.y += 0.0005;
-        starMaterial.opacity = 0.5 + Math.sin(time * 2) * 0.3;
+        // Rotación de la galaxia
+        starField.rotation.y += 0.0006;
+        starField.rotation.x += 0.0002;
 
-        // Actualizar Palabras
+        // Actualización de las 100 frases
         const widthHalf = window.innerWidth / 2;
         const heightHalf = window.innerHeight / 2;
 
@@ -149,7 +207,7 @@
             p.angle += p.speed;
             const x = Math.cos(p.angle) * p.radius;
             const z = Math.sin(p.angle) * p.radius;
-            const y = p.yOff + Math.sin(p.angle * 2) * 2;
+            const y = p.yOff + Math.sin(p.angle * 2 + p.phase) * 0.8;
 
             const vector = new THREE.Vector3(x, y, z);
             vector.project(camera);
@@ -158,12 +216,17 @@
             const sy = -(vector.y * heightHalf) + heightHalf;
 
             p.element.style.transform = `translate(-50%, -50%) translate3d(${sx}px, ${sy}px, 0)`;
-            p.element.style.fontSize = `${14 + (z + 10) * 0.5}px`;
-            p.element.style.opacity = (z + 15) / 25;
+            
+            // Tamaño según cercanía (3D)
+            const depthScale = Math.max(0.6, (z + 10) / 15);
+            p.element.style.fontSize = `${p.baseSize * depthScale}px`;
+            
+            // Opacidad
+            p.element.style.opacity = Math.max(0.2, (z + 10) / 16);
 
-            // Cambio de color rosa/blanco
-            const colorVal = Math.sin(time + p.phase);
-            p.element.style.color = colorVal > 0 ? "#ffffff" : "#ff69b4";
+            // Cambio progresivo de blanco a rosa
+            const colorBlend = Math.sin(time * 2 + p.phase);
+            p.element.style.color = colorBlend > 0 ? "#ffffff" : "#ff69b4";
         });
 
         renderer.render(scene, camera);
