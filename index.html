@@ -8,71 +8,183 @@
     body {
       margin: 0;
       overflow: hidden;
-      background-color: #050010; /* Fondo espacio profundo */
-      color: #fff;
-      font-family: 'Times New Roman', Times, serif; /* Fuente más elegante */
+      background-color: #020005;
+      font-family: 'Arial', sans-serif;
     }
-    canvas {
-      display: block;
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+    }
+    .text-particle {
+      position: absolute;
+      white-space: nowrap;
+      font-weight: bold;
+      pointer-events: none;
+      transition: color 2s ease, opacity 0.5s ease;
+      text-shadow: 0 0 8px rgba(255, 105, 180, 0.8), 0 0 15px rgba(255, 255, 255, 0.5);
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-<canvas id="galaxyCanvas"></canvas>
+<div id="canvas-container"></div>
 
 <script>
-  const canvas = document.getElementById('galaxyCanvas');
-  const ctx = canvas.getContext('2d');
-
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-
-  // ESTA ES LA LISTA MODIFICADA CON LOS NOMBRES
-  const words = ["Victoria", "Cataleya", "Victoria & Cataleya", "Amor eterno", "Victoria", "Cataleya", "Te amo", "Eternidad", "Corazón", "Inspiración", "Magia"];
+  // --- CONFIGURACIÓN TRES.JS ---
+  const container = document.getElementById('canvas-container');
+  const scene = new THREE.Scene();
   
-  const particles = [];
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.z = 18;
 
-  // Crear partículas
-  for (let i = 0; i < 150; i++) {
-    particles.push({
-      text: words[Math.floor(Math.random() * words.length)],
-      angle: Math.random() * Math.PI * 2,
-      radius: Math.random() * (canvas.width / 2.5) + 50,
-      speed: (Math.random() * 0.004) + 0.001, // Velocidad variable
-      size: Math.floor(Math.random() * 10) + 14 // Tamaño variable
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  container.appendChild(renderer.domElement);
+
+  // --- FONDO DE ESTRELLAS ---
+  const starsGeometry = new THREE.BufferGeometry();
+  const starsCount = 1200;
+  const starPositions = new Float32Array(starsCount * 3);
+
+  for(let i = 0; i < starsCount * 3; i++) {
+    starPositions[i] = (Math.random() - 0.5) * 100;
+  }
+  starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+
+  const starsMaterial = new THREE.PointsMaterial({
+    color: 0xffffff,
+    size: 0.15,
+    transparent: true,
+    opacity: 0.8
+  });
+  const starField = new THREE.Points(starsGeometry, starsMaterial);
+  scene.add(starField);
+
+  // --- CORAZÓN 3D EN EL CENTRO ---
+  const heartShape = new THREE.Shape();
+  const x = 0, y = 0;
+  heartShape.moveTo(x + 0.25, y + 0.25);
+  heartShape.bezierCurveTo(x + 0.25, y + 0.25, x, y, x, y - 0.25);
+  heartShape.bezierCurveTo(x, y - 0.75, x - 0.75, y - 0.75, x - 0.75, y - 0.75);
+  heartShape.bezierCurveTo(x - 1.25, y - 0.75, x - 1.25, y - 0.125, x - 1.25, y - 0.125);
+  heartShape.bezierCurveTo(x - 1.25, y + 0.375, x - 0.5, y + 0.875, x + 0.25, y + 1.25);
+  heartShape.bezierCurveTo(x + 1, y + 0.875, x + 1.75, y + 0.375, x + 1.75, y - 0.125);
+  heartShape.bezierCurveTo(x + 1.75, y - 0.125, x + 1.75, y - 0.75, x + 1.25, y - 0.75);
+  heartShape.bezierCurveTo(x + 0.875, y - 0.75, x + 0.25, y, x + 0.25, y + 0.25);
+
+  const extrudeSettings = { depth: 0.4, bevelEnabled: true, bevelSegments: 3, steps: 2, bevelSize: 0.15, bevelThickness: 0.15 };
+  const heartGeometry = new THREE.ExtrudeGeometry(heartShape, extrudeSettings);
+  heartGeometry.center();
+
+  const heartMaterial = new THREE.MeshPhongMaterial({
+    color: 0xff1493,
+    emissive: 0x800040,
+    shininess: 100,
+    specular: 0xffffffff
+  });
+
+  const heartMesh = new THREE.Mesh(heartGeometry, heartMaterial);
+  heartMesh.scale.set(1.2, 1.2, 1.2);
+  heartMesh.rotation.x = Math.PI; // Orientación correcta
+  scene.add(heartMesh);
+
+  // --- LUCES ---
+  const pointLight = new THREE.PointLight(0xff69b4, 2, 50);
+  pointLight.position.set(0, 0, 5);
+  scene.add(pointLight);
+
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  scene.add(ambientLight);
+
+  // --- TEXTOS EN ÓRBITA AMPLIA ---
+  const wordList = ["Victoria", "Cataleya", "Victoria & Cataleya", "Amor eterno", "Te amo", "Eternidad", "Mi vida", "Mi sol", "Inspiración", "Magia", "Corazón"];
+  const textCount = 45; // Cantidad moderada para que no se empalmen
+  const textElements = [];
+
+  const colors = ["#ffffff", "#ffb6c1", "#ff69b4", "#ff1493", "#e6e6fa"];
+
+  for (let i = 0; i < textCount; i++) {
+    const el = document.createElement('div');
+    el.className = 'text-particle';
+    el.innerText = wordList[Math.floor(Math.random() * wordList.length)];
+    container.appendChild(el);
+
+    // Órbita más amplia y distribuida
+    const radius = 6 + Math.random() * 8; 
+    const angle = Math.random() * Math.PI * 2;
+    const speed = (0.002 + Math.random() * 0.003) * (Math.random() < 0.5 ? 1 : -1);
+    const yOffset = (Math.random() - 0.5) * 6;
+    const size = 13 + Math.floor(Math.random() * 8);
+
+    el.style.fontSize = `${size}px`;
+
+    textElements.push({
+      element: el,
+      radius: radius,
+      angle: angle,
+      speed: speed,
+      y: yOffset,
+      colorTimer: Math.random() * 100
     });
   }
 
+  // --- ANIMACIÓN ---
   function animate() {
-    // Efecto de rastro (motion blur)
-    ctx.fillStyle = 'rgba(5, 0, 16, 0.15)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    requestAnimationFrame(animate);
 
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
+    // Rotación del corazón
+    heartMesh.rotation.y += 0.012;
+    heartMesh.position.y = Math.sin(Date.now() * 0.002) * 0.3; // Flotación suave
 
-    particles.forEach(p => {
-      p.angle += p.speed;
-      const x = centerX + Math.cos(p.angle) * p.radius;
-      const y = centerY + Math.sin(p.angle) * (p.radius * 0.6); // Órbita elíptica
+    // Estrellas titilantes
+    starField.rotation.y += 0.0003;
 
-      // Estilo de texto: Color fucsia/rosado
-      ctx.fillStyle = '#ff1493'; 
-      ctx.font = `${p.size}px serif`;
-      ctx.fillText(p.text, x, y);
+    // Posicionamiento 3D de textos
+    const widthHalf = window.innerWidth / 2;
+    const heightHalf = window.innerHeight / 2;
+
+    textElements.forEach(item => {
+      item.angle += item.speed;
+
+      const posX = Math.cos(item.angle) * item.radius;
+      const posZ = Math.sin(item.angle) * item.radius;
+      const posY = item.y + Math.sin(item.angle * 2) * 0.5;
+
+      // Proyección 3D a coordenadas 2D de pantalla
+      const vector = new THREE.Vector3(posX, posY, posZ);
+      vector.project(camera);
+
+      const screenX = (vector.x * widthHalf) + widthHalf;
+      const screenY = -(vector.y * heightHalf) + heightHalf;
+
+      item.element.style.transform = `translate(-50%, -50%) translate3d(${screenX}px, ${screenY}px, 0px)`;
+
+      // Transparencia por profundidad
+      const opacity = (posZ + 15) / 25;
+      item.element.style.opacity = Math.max(0.15, Math.min(1, opacity));
+
+      // Cambio suave de color entre blanco y rosas
+      item.colorTimer += 0.015;
+      if (Math.floor(item.colorTimer) % 20 === 0) {
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        item.element.style.color = randomColor;
+      }
     });
 
-    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
   }
 
   animate();
 
-  // Ajustar tamaño si se rota el teléfono
+  // Redimensionar pantalla
   window.addEventListener('resize', () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
   });
 </script>
+
 </body>
 </html>
